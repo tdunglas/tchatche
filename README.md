@@ -10,5 +10,5 @@ Sa réalisation est l'oeuvre de 3 étudiants, Bachir (C'est quoi son nom de fami
 
 ## Fonctionnalités implémentées
 
-## Installation
+## Installation et utilisation
 
