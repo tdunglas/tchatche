@@ -11,6 +11,7 @@ Pour proposer des requêtes, insérez des tâches dans la liste des autres. Ento
 - Interprétation des messages codés reçu (comment réagir lors d'une requête de message privé entre deux utilisateurs ?)
 
 ## [Client] : Kostia
+- Session initiale (choix du pseudo)
 - Ecrire un message au serveur
 - Choix de la modélisation des paramètres (chemin du serveur et autres configurations)
 - Analyse des commandes utilisateurs
