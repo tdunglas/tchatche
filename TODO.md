@@ -9,6 +9,7 @@ Pour proposer des requêtes, insérez des tâches dans la liste des autres. Ento
 - Lire un message du le tube du serveur
 - Envoyer des messages sur les tubes des utilisateurs
 - Interprétation des messages codés reçu (comment réagir lors d'une requête de message privé entre deux utilisateurs ?)
+- Messages de contrôle [EXTENSION]
 
 ## [Client] : Kostia
 - Session initiale (choix du pseudo)
@@ -19,6 +20,7 @@ Pour proposer des requêtes, insérez des tâches dans la liste des autres. Ento
 - Déconnexion
 - Interprétation des messages codés reçu (que faire quand on reçoit un message privé ?)
 - Affichage
+- Demande de liste utilisateur [EXTENSION]
 
 ## [Protocole] : Boris
 - Analyse et découpage du protocole
