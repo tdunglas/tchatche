@@ -20,7 +20,14 @@ int main(int arg , char * argv []){
   }
   
   r = is_in_hashTab(hash_tab,pseudo);
-  printf("r = %d \n",r);
+  printf("is in hashtab = %d \n",r);
+
+  r = remove_user(hash_tab,pseudo);
+  printf("remove = %d \n",r);
+
+  r = is_in_hashTab(hash_tab,pseudo);
+  printf("is in hashtab = %d \n",r);
+
 
   return  0 ;
 }
