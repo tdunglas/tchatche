@@ -1,6 +1,10 @@
-#include "function.h"
-#include <glib.h>
-
+#include"function.h" 
+/*la cle -> c'est le pseudo
+  la valeur -> c'est l'identifiant
+  gboolean -> (TRUE,FALSE)
+  TRUE -> !FALSE
+  FALSE -> 0 
+*/
 
 gboolean insert_user(GHashTable * hash_tab, char * pseudo , char * id){
   
