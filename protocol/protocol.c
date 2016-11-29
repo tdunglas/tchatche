@@ -15,6 +15,8 @@ Le header correspond a la taille + le type
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <math.h>
 
 typedef char* protocol;
 
@@ -30,6 +32,32 @@ typedef enum message_type {
 	DEBG_t,
 	FILE_t
 } message_type;
+
+/* ---------------------------------------------
+			FONCTIONS DE DECODAGE
+   --------------------------------------------- */
+
+int char2int(char c) {
+	return (int)(c-'0');
+}
+
+// (1) On suppose qu'on ne peut pas avoir de chiffres dans le type
+// (2) On suppose que le type ne contient que des lettres majuscules
+int decodeLength(protocol message) {
+	int result = 0;
+	int size_of_length = 0;
+	int i = 0;
+	while (isdigit(message[i])) {
+		i++;
+		size_of_length++;
+	}
+	int left_factor = (int)(pow(10.0, (double)(size_of_length-1)));
+	for (i = 0; i < size_of_length; i++) {
+		result += (char2int(message[i]))*left_factor;
+		left_factor /= 10;
+	}
+	return result;
+}
 
 /* ---------------------------------------------
 			 FONCTIONS D'ENCODAGE
@@ -54,12 +82,11 @@ const char* encodeType(message_type type) {
 	}
 }
 
-// (length = 4) \/ (length = 8)
 char* encodeNumber(int n, int length) {
 	char* buffer = (char*)malloc(sizeof(char)*length);
 	int i;
 	int mod_factor = 10, div_factor = 1;
-	for(i = length-1; i >= 0; i--) {
+	for (i = length-1; i >= 0; i--) {
 		buffer[i] = (char)('0'+((int)(n%mod_factor/div_factor)));
 		mod_factor *= 10;
 		div_factor *= 10;
@@ -67,19 +94,23 @@ char* encodeNumber(int n, int length) {
 	return buffer;
 }
 
-int calculateMessageLength(int length_postheader) {
-	int length_header = 4+4;
-	int assumption = length_header+length_postheader;
-	if (assumption > 9999) {
-		if (assumption <= 99999999) {
-			return 8+4+length_postheader;
-		}
-		else {
-			perror("calculateMessageLength : length to large to encode");
-			exit(0);
-		}
+void addLengthValue(protocol message, int value) {
+	int messageLength = decodeLength(message);
+	int newLength = messageLength+value;
+	if (newLength <= 9999) {
+		char* lengthEncoding = encodeNumber(newLength, 4);
+		int i;
+		for (i = 0; i < 4; i++)
+			message[i] = lengthEncoding[i]; 
+		free(lengthEncoding);
 	}
-	return assumption;
+	else if (newLength <= 99999999) {
+
+	}
+	else {
+		perror("addLengthValue : length to large to encode");
+		exit(0);
+	}
 }
 
 protocol makeMessageHeader(int length, message_type type) {
@@ -90,7 +121,7 @@ protocol makeMessageHeader(int length, message_type type) {
 	else if (length <= 99999999)
 		length_nbchar = 8;
 	else {
-		perror("makeMessageHeader : length to large to encode");
+		perror("initMessageHeader : length to large to encode");
 		exit(0);
 	}
 	char* buffer = (char*)calloc(sizeof(char), length_nbchar+4);
@@ -107,25 +138,57 @@ protocol makeMessageHeader(int length, message_type type) {
 	return buffer;
 }
 
+protocol initMessageHeader(message_type type) {
+	return makeMessageHeader(8, type);
+}
+
+char* encodeString(char* string, int length) {
+	char* buffer;
+	char* numberEncoding;
+	if (length <= 9999) {
+		buffer = (char*)calloc(sizeof(char), length+4+1);
+		numberEncoding = encodeNumber(length, 4);
+		buffer[length+4] = '\0';
+	}
+	else if (length <= 99999999) {
+		buffer = (char*)calloc(sizeof(char), length+8+1);
+		numberEncoding = encodeNumber(length, 8);
+		buffer[length+8] = '\0';
+	}
+	else {
+		perror("encodeString : length to large to encode");
+		exit(0);
+	}
+	buffer = strcat(buffer, numberEncoding);
+	buffer = strcat(buffer, string);
+	free(numberEncoding);
+	return buffer;
+}
+
+protocol addMessageString(protocol message, char* string) {
+	char* stringEncoding = encodeString(string, strlen(string));
+	int stringEncodingLength = strlen(stringEncoding);
+	addLengthValue(message, stringEncodingLength);
+	char* buffer = (char*)calloc(sizeof(char), decodeLength(message)+stringEncodingLength);
+	buffer = strcat(buffer, message);
+	buffer = strcat(buffer, stringEncoding);
+	free(message);
+	return buffer;
+}
+
 // ------------------- Connexion -------------------
 protocol encodeConnexion(char* pseudo, char* tube) {
-	int size_pseudo = strlen(pseudo);
-	int size_tube = strlen(tube);
-	int length_postheader = size_pseudo+size_tube;
-	int total_length = calculateMessageLength(length_postheader);
-	char* buffer = (char*)calloc(sizeof(char), total_length);
-	char* header = makeMessageHeader(total_length, HELO_t);
-	buffer = strcat(buffer, header);
-	buffer = strcat(buffer, pseudo);
-	buffer = strcat(buffer, tube);
-	return buffer;
+	char* header = initMessageHeader(HELO_t);
+	header = addMessageString(header, pseudo);
+	header = addMessageString(header, tube);
+	return header;
 }
 
 int main() {
 	protocol connexion = encodeConnexion("engboris", "s1");
 	int i;
-	for (i = 0; i < calculateMessageLength(10); i++) {
-		printf("[%c]", connexion[i]);
+	for (i = 0; i < decodeLength(connexion); i++) {
+		printf("%c", connexion[i]);
 	}
 	return 0;
 }
