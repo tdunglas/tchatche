@@ -172,6 +172,29 @@ protocol addMessageString(protocol message, char* string) {
 	char* buffer = (char*)calloc(sizeof(char), decodeLength(message)+stringEncodingLength);
 	buffer = strcat(buffer, message);
 	buffer = strcat(buffer, stringEncoding);
+	free(stringEncoding);
+	free(message);
+	return buffer;
+}
+
+protocol addMessageNumber(protocol message, int number) {
+	int lengthEncoding = 0;
+
+	if (number <= 9999)
+		lengthEncoding = 4;
+	else if (number <= 99999999)
+		lengthEncoding = 8;
+	else {
+		perror("addMessageNumber : length to large to encode");
+		exit(0);
+	}
+	addLengthValue(message, lengthEncoding);
+	char* numberEncoding = encodeNumber(number, lengthEncoding);
+	char* buffer = (char*)calloc(sizeof(char), decodeLength(message)+lengthEncoding);
+	buffer = strcat(buffer, message);
+	buffer = strcat(buffer, numberEncoding);
+
+	free(numberEncoding);
 	free(message);
 	return buffer;
 }
@@ -184,11 +207,22 @@ protocol encodeConnexion(char* pseudo, char* tube) {
 	return header;
 }
 
+protocol encodeConnexionConfirmation(int id) {
+	char* header = initMessageHeader(OKOK_t);
+	header = addMessageNumber(header, id);
+	return header;
+}
+
 int main() {
-	protocol connexion = encodeConnexion("engboris", "s1");
 	int i;
+	protocol connexion = encodeConnexion("engboris", "s1");
 	for (i = 0; i < decodeLength(connexion); i++) {
 		printf("%c", connexion[i]);
+	}
+	printf("\n");
+	protocol confirmation = encodeConnexionConfirmation(15);
+	for (i = 0; i < decodeLength(confirmation); i++) {
+		printf("%c", confirmation[i]);
 	}
 	return 0;
 }
