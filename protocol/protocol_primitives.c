@@ -17,60 +17,9 @@ Le header correspond a la taille + le type
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include "protocol_primitives.h"
 
 #define TYPE_LENGTH 4
-
-typedef char* protocol_message;
-
-typedef enum message_type {
-	BCST_t,
-	PRVT_t,
-	BADD_t,
-	OKOK_t,
-	BYEE_t,
-	HELO_t,
-	LIST_t,
-	SHUT_t,
-	DEBG_t,
-	FILE_t
-} message_type;
-
-typedef struct data_element {
-	char* resource;
-	struct data_element* next;
-} data_element;
-
-typedef struct protocol_data {
-	int total_length;
-	message_type type;
-	data_element* data;
-} protocol_data;
-
-/* ---------------------------------------------
-			FONCTIONS DE DECODAGE
-   --------------------------------------------- */
-
-int char2int(char c) {
-	return (int)(c-'0');
-}
-
-// (1) On suppose qu'on ne peut pas avoir de chiffres dans le type
-// (2) On suppose que le type ne contient que des lettres majuscules
-int decodeLength(protocol_message message) {
-	int result = 0;
-	int size_of_length = 0;
-	int i = 0;
-	while (isdigit(message[i])) {
-		i++;
-		size_of_length++;
-	}
-	int left_factor = (int)(pow(10.0, (double)(size_of_length-1)));
-	for (i = 0; i < size_of_length; i++) {
-		result += (char2int(message[i]))*left_factor;
-		left_factor /= 10;
-	}
-	return result;
-}
 
 /* ---------------------------------------------
 			 FONCTIONS D'ENCODAGE
@@ -230,41 +179,57 @@ void addMessageNumber(protocol_data* d, int number) {
 	insertData(d, buffer);
 }
 
-// ------------------- Connexion -------------------
-protocol_message encodeConnexion(char* pseudo, char* tube) {
-	protocol_data* header = initMessageHeader(HELO_t);
-	addMessageString(header, pseudo);
-	addMessageString(header, tube);
-	return encodeProtocolData(header);
+/* ---------------------------------------------
+			FONCTIONS DE DECODAGE
+   --------------------------------------------- */
+
+int char2int(char c) {
+	return (int)(c-'0');
 }
 
-protocol_message encodeConnexionConfirmation(int id) {
-	protocol_data* header = initMessageHeader(OKOK_t);
-	addMessageNumber(header, id);
-	return encodeProtocolData(header);
+// (1) On suppose qu'on ne peut pas avoir de chiffres dans le type
+// (2) On suppose que le type ne contient que des lettres majuscules
+int decodeLength(protocol_message message) {
+	int result = 0;
+	int size_of_length = 0;
+	int i = 0;
+	while (isdigit(message[i])) {
+		i++;
+		size_of_length++;
+	}
+	int left_factor = (int)(pow(10.0, (double)(size_of_length-1)));
+	for (i = 0; i < size_of_length; i++) {
+		result += (char2int(message[i]))*left_factor;
+		left_factor /= 10;
+	}
+	return result;
 }
 
-// ------------------- Echec -------------------
-protocol_message encodeFail() {
-	protocol_data* header = initMessageHeader(BADD_t);
-	return encodeProtocolData(header);
+int decodeType(protocol_message message) {
+	int i = 0;
+	while (isdigit(message[i]))
+		i++;
+	char* buffer = (char*)malloc(sizeof(char)*4);
+	sprintf(buffer, "%c%c%c%c", message[i], message[i+1], message[i+2], message[i+3]);
+	     if (strcmp("BCST", buffer)) { return BCST_t; }
+	else if (strcmp("PRVT", buffer)) { return PRVT_t; }
+	else if (strcmp("BADD", buffer)) { return BADD_t; }
+	else if (strcmp("OKOK", buffer)) { return OKOK_t; }
+	else if (strcmp("BYEE", buffer)) { return BYEE_t; }
+	else if (strcmp("HELO", buffer)) { return HELO_t; }
+	else if (strcmp("LIST", buffer)) { return LIST_t; }
+	else if (strcmp("SHUT", buffer)) { return SHUT_t; }
+	else if (strcmp("DEBG", buffer)) { return DEBG_t; }
+	else if (strcmp("FILE", buffer)) { return FILE_t; }
+	else { perror("decodeType : unknown type"); exit(0); } 
+	free(buffer);
 }
 
-int main() {
-	int i;
-	protocol_message connexion = encodeConnexion("engboris", "s1");
-	for (i = 0; i < decodeLength(connexion); i++) {
-		printf("[%c]", connexion[i]);
-	}
-	printf("\n");
-	protocol_message confirmation = encodeConnexionConfirmation(15);
-	for (i = 0; i < decodeLength(confirmation); i++) {
-		printf("[%c]", confirmation[i]);
-	}
-	printf("\n");
-	protocol_message fail = encodeFail();
-	for (i = 0; i < decodeLength(fail); i++) {
-		printf("[%c]", fail[i]);
-	}
-	return 0;
+protocol_data* decodeProtocolData(protocol_message message) {
+	protocol_data* protocolData = (protocol_data*)malloc(sizeof(protocol_data));
+	protocolData->total_length = decodeLength(message);
+	protocolData->type = decodeType(message);
+	protocolData->data = NULL;
+	// TODO
+	return protocolData;
 }
