@@ -15,15 +15,15 @@
 // ------------------- Connexion -------------------
 protocol_message encodeConnexion(char* pseudo, char* tube);
 
-protocol_message encodeConnexionConfirmation(int id);
+protocol_message encodeConnexionConfirmation(long int id);
 
 // ------------------- Echec -------------------
 protocol_message encodeFail();
 
 // ------------------- Deconnexion -------------------
-protocol_message encodeDeconnexion(int id);
+protocol_message encodeDeconnexion(long int id);
 
-protocol_message encodeDeconnexionConfirmation(int id);
+protocol_message encodeDeconnexionConfirmation(long int id);
 
 /* ---------------------------------------------
 			FONCTIONS DE DECODAGE

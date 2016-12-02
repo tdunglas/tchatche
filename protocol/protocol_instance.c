@@ -31,7 +31,7 @@ protocol_message encodeConnexion(char* pseudo, char* tube) {
 	return encodeProtocolData(header);
 }
 
-protocol_message encodeConnexionConfirmation(int id) {
+protocol_message encodeConnexionConfirmation(long int id) {
 	protocol_data* header = initMessageHeader(OKOK_t);
 	addMessageNumber(header, id);
 	return encodeProtocolData(header);
@@ -44,13 +44,13 @@ protocol_message encodeFail() {
 }
 
 // ------------------- Deconnexion -------------------
-protocol_message encodeDeconnexion(int id) {
+protocol_message encodeDeconnexion(long int id) {
 	protocol_data* header = initMessageHeader(BYEE_t);
 	addMessageNumber(header, id);
 	return encodeProtocolData(header);
 }
 
-protocol_message encodeDeconnexionConfirmation(int id) {
+protocol_message encodeDeconnexionConfirmation(long int id) {
 	return encodeDeconnexion(id);
 }
 

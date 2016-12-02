@@ -44,7 +44,7 @@ const char* encodeType(message_type type) {
 	}
 }
 
-char* encodeNumber(int n, int length) {
+char* encodeNumber(long int n, int length) {
 	char* buffer = (char*)malloc(sizeof(char)*length);
 	int i;
 	int mod_factor = 10, div_factor = 1;
@@ -56,7 +56,7 @@ char* encodeNumber(int n, int length) {
 	return buffer;
 }
 
-char* encodeString(char* string, int length) {
+char* encodeString(char* string, long int length) {
 	char* buffer;
 	char* numberEncoding;
 	if (length <= 9999) {
@@ -87,8 +87,15 @@ protocol_data* initMessageHeader(message_type type) {
 	return p;
 }
 
-void freeProtocolData(protocol_data d) {
-
+void freeProtocolData(protocol_data* d) {
+	data_element* e = d->data;
+	while (e != NULL) {
+		free(e->resource);
+		data_element* tmp = e;
+		e = e->next;
+		free(tmp);
+	}
+	free(d);
 }
 
 protocol_message encodeProtocolData(protocol_data* d) {
@@ -119,11 +126,13 @@ protocol_message encodeProtocolData(protocol_data* d) {
 	// Data composition
 	data_element* e = d->data;
 	while (e != NULL) {
-		int string_length = strlen(e->resource);
+		long int string_length = strlen(e->resource);
 		buffer_message = (char*)realloc(buffer_message, sizeof(char)*(length_nbchar+TYPE_LENGTH+string_length));
 		buffer_message = strcat(buffer_message, e->resource);
 		e = e->next;
 	}
+
+	freeProtocolData(d);
 	
 	return buffer_message;
 }
@@ -146,7 +155,7 @@ void insertData(protocol_data* d, char* string) {
 
 void addMessageString(protocol_data* d, char* string) {
 	// String encoding
-	int string_length = strlen(string);
+	long int string_length = strlen(string);
 	char* stringEncoding = encodeString(string, string_length);
 	int stringEncodingLength = strlen(stringEncoding);
 	d->total_length += stringEncodingLength;
@@ -159,7 +168,7 @@ void addMessageString(protocol_data* d, char* string) {
 	insertData(d, buffer);
 }
 
-void addMessageNumber(protocol_data* d, int number) {
+void addMessageNumber(protocol_data* d, long int number) {
 	// Number encoding
 	int lengthEncoding = 0;
 	if (number <= 9999)
@@ -189,8 +198,8 @@ int char2int(char c) {
 
 // (1) On suppose qu'on ne peut pas avoir de chiffres dans le type
 // (2) On suppose que le type ne contient que des lettres majuscules
-int decodeLength(protocol_message message) {
-	int result = 0;
+long int decodeLength(protocol_message message) {
+	long int result = 0;
 	int size_of_length = 0;
 	int i = 0;
 	while (isdigit(message[i])) {
@@ -229,7 +238,6 @@ protocol_data* decodeProtocolData(protocol_message message) {
 	protocol_data* protocolData = (protocol_data*)malloc(sizeof(protocol_data));
 	protocolData->total_length = decodeLength(message);
 	protocolData->type = decodeType(message);
-	protocolData->data = NULL;
-	// TODO
+		
 	return protocolData;
 }
