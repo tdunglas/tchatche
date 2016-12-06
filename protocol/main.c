@@ -27,5 +27,7 @@ int main() {
 	for (i = 0; i < decodeLength(deconnexion); i++) {
 		printf("[%c]", deconnexion[i]);
 	}
+	printf("\n");
+	printf("Type : %s", encodeType(decodeType(deconnexion)));
 	return 0;
 }

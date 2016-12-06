@@ -22,6 +22,37 @@ Le header correspond a la taille + le type
 #define TYPE_LENGTH 4
 
 /* ---------------------------------------------
+		    MANIPULATION DE DONNEES
+   --------------------------------------------- */
+
+void freeProtocolData(protocol_data* d) {
+	data_element* e = d->data;
+	while (e != NULL) {
+		free(e->resource);
+		data_element* tmp = e;
+		e = e->next;
+		free(tmp);
+	}
+	free(d);
+}
+
+void insertData(protocol_data* d, char* string) {
+	data_element* es = (data_element*)malloc(sizeof(data_element));
+	es->resource = string;
+	es->next = NULL;
+
+	data_element* e = d->data;
+	if (e != NULL) {
+		while (e->next != NULL)
+			e = e->next;
+		e->next = es;
+	}
+	else {
+		d->data = es;
+	}
+}
+
+/* ---------------------------------------------
 			 FONCTIONS D'ENCODAGE
    --------------------------------------------- */
 
@@ -87,17 +118,6 @@ protocol_data* initMessageHeader(message_type type) {
 	return p;
 }
 
-void freeProtocolData(protocol_data* d) {
-	data_element* e = d->data;
-	while (e != NULL) {
-		free(e->resource);
-		data_element* tmp = e;
-		e = e->next;
-		free(tmp);
-	}
-	free(d);
-}
-
 protocol_message encodeProtocolData(protocol_data* d) {
 	// Header composition
 	int length_nbchar = 0;
@@ -135,22 +155,6 @@ protocol_message encodeProtocolData(protocol_data* d) {
 	freeProtocolData(d);
 	
 	return buffer_message;
-}
-
-void insertData(protocol_data* d, char* string) {
-	data_element* es = (data_element*)malloc(sizeof(data_element));
-	es->resource = string;
-	es->next = NULL;
-
-	data_element* e = d->data;
-	if (e != NULL) {
-		while (e->next != NULL)
-			e = e->next;
-		e->next = es;
-	}
-	else {
-		d->data = es;
-	}
 }
 
 void addMessageString(protocol_data* d, char* string) {
@@ -214,22 +218,22 @@ long int decodeLength(protocol_message message) {
 	return result;
 }
 
-int decodeType(protocol_message message) {
+message_type decodeType(protocol_message message) {
 	int i = 0;
 	while (isdigit(message[i]))
 		i++;
 	char* buffer = (char*)malloc(sizeof(char)*4);
 	sprintf(buffer, "%c%c%c%c", message[i], message[i+1], message[i+2], message[i+3]);
-	     if (strcmp("BCST", buffer)) { return BCST_t; }
-	else if (strcmp("PRVT", buffer)) { return PRVT_t; }
-	else if (strcmp("BADD", buffer)) { return BADD_t; }
-	else if (strcmp("OKOK", buffer)) { return OKOK_t; }
-	else if (strcmp("BYEE", buffer)) { return BYEE_t; }
-	else if (strcmp("HELO", buffer)) { return HELO_t; }
-	else if (strcmp("LIST", buffer)) { return LIST_t; }
-	else if (strcmp("SHUT", buffer)) { return SHUT_t; }
-	else if (strcmp("DEBG", buffer)) { return DEBG_t; }
-	else if (strcmp("FILE", buffer)) { return FILE_t; }
+	     if (strcmp("BCST", buffer) == 0) { return BCST_t; }
+	else if (strcmp("PRVT", buffer) == 0) { return PRVT_t; }
+	else if (strcmp("BADD", buffer) == 0) { return BADD_t; }
+	else if (strcmp("OKOK", buffer) == 0) { return OKOK_t; }
+	else if (strcmp("BYEE", buffer) == 0) { return BYEE_t; }
+	else if (strcmp("HELO", buffer) == 0) { return HELO_t; }
+	else if (strcmp("LIST", buffer) == 0) { return LIST_t; }
+	else if (strcmp("SHUT", buffer) == 0) { return SHUT_t; }
+	else if (strcmp("DEBG", buffer) == 0) { return DEBG_t; }
+	else if (strcmp("FILE", buffer) == 0) { return FILE_t; }
 	else { perror("decodeType : unknown type"); exit(0); } 
 	free(buffer);
 }
@@ -238,6 +242,6 @@ protocol_data* decodeProtocolData(protocol_message message) {
 	protocol_data* protocolData = (protocol_data*)malloc(sizeof(protocol_data));
 	protocolData->total_length = decodeLength(message);
 	protocolData->type = decodeType(message);
-		
+	
 	return protocolData;
 }

@@ -57,3 +57,7 @@ protocol_message encodeDeconnexionConfirmation(long int id) {
 /* ---------------------------------------------
 			FONCTIONS DE DECODAGE
    --------------------------------------------- */
+
+// ------------------- Connexion -------------------
+
+// ------------------- Deconnexion -------------------
