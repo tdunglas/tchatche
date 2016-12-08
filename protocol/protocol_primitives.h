@@ -52,6 +52,10 @@ typedef struct protocol_data {
 		    MANIPULATION DE DONNEES
    --------------------------------------------- */
 
+char* stringWithoutLength(char* string);
+
+void freeProtocolContent(content_data* d);
+
 void freeProtocolData(protocol_data* d);
 
 void insertData(protocol_data* d, content_data* content);
@@ -85,6 +89,12 @@ long int decodeNumber(char* number);
 long int decodeLength(protocol_message message);
 
 message_type decodeType(protocol_message message);
+
+// Permet de récupérer le code structure d'un protocol encodé sous forme d'une chaine de caractre
+// I signifie Integer et S signifie String
+const char* getTypeStructure(message_type type);
+
+protocol_data* extractMessageContent(protocol_data* data, const char* codeStructure);
 
 protocol_data* decodeProtocolData(protocol_message message);
 

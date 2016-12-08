@@ -10,6 +10,9 @@ Format du protocole :
   + Un entier (4 ou 8 caracteres)
 
 Le header correspond a la taille + le type
+
+Si on oublie de mettre a jour les fonctions lors de la creation 
+d'un nouveau type, on est prevenu par une erreur lors de l'execution.
 */
 
 #include <stdio.h>
@@ -25,7 +28,7 @@ Le header correspond a la taille + le type
 		    MANIPULATION DE DONNEES
    --------------------------------------------- */
 
-char* string_without_length(char* string) {
+char* stringWithoutLength(char* string) {
 	int length = strlen(string);
 	int offset = 0;
 	int i = 0;
@@ -39,10 +42,19 @@ char* string_without_length(char* string) {
 	return buffer;
 }
 
+void freeProtocolContent(content_data* d) {
+	if (d != NULL) {
+		if (d->is_string == 1) {
+			free(d->data_union->string);
+		}
+		free(d->data_union);
+	}
+}
+
 void freeProtocolData(protocol_data* d) {
 	data_element* e = d->data;
 	while (e != NULL) {
-		free(e->resource);
+		freeProtocolContent(e->resource);
 		data_element* tmp = e;
 		e = e->next;
 		free(tmp);
@@ -83,7 +95,7 @@ const char* encodeType(message_type type) {
 		case DEBG_t: return "DEBG"; break;
 		case FILE_t: return "FILE"; break;
 		default:
-			perror("messagetype_to_string : No encoding for the given type");
+			perror("messagetype_to_string : unknown or unimplemented type");
 			exit(0);
 			break;
 	}
@@ -245,6 +257,18 @@ long int decodeLength(protocol_message message) {
 	return decodeNumber(message);
 }
 
+const char* getTypeStructure(message_type type) {
+	switch (type) {
+		case BADD_t: return ""; break;
+		case BYEE_t: return "I"; break;
+		case HELO_t: return "SS"; break;
+		default:
+			perror("getTypeStructure : unknown or unimplemented type");
+			exit(0);
+			break;
+	}
+}
+
 message_type decodeType(protocol_message message) {
 	int i = 0;
 	while (isdigit(message[i]))
@@ -261,14 +285,19 @@ message_type decodeType(protocol_message message) {
 	else if (strcmp("SHUT", buffer) == 0) { return SHUT_t; }
 	else if (strcmp("DEBG", buffer) == 0) { return DEBG_t; }
 	else if (strcmp("FILE", buffer) == 0) { return FILE_t; }
-	else { perror("decodeType : unknown type"); exit(0); } 
+	else { perror("decodeType : unknown or unimplemented type"); exit(0); } 
 	free(buffer);
+}
+
+protocol_data* extractMessageContent(protocol_data* data, const char* codeStructure) {
+	/* TODO */
+	return NULL;
 }
 
 protocol_data* decodeProtocolData(protocol_message message) {
 	protocol_data* protocolData = (protocol_data*)malloc(sizeof(protocol_data));
 	protocolData->total_length = decodeLength(message);
 	protocolData->type = decodeType(message);
-	
-	return protocolData;
+	const char* codeStructure = getTypeStructure(protocolData->type);
+	return extractMessageContent(protocolData, codeStructure);
 }
