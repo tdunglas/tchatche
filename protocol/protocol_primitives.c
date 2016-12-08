@@ -25,6 +25,20 @@ Le header correspond a la taille + le type
 		    MANIPULATION DE DONNEES
    --------------------------------------------- */
 
+char* string_without_length(char* string) {
+	int length = strlen(string);
+	int offset = 0;
+	int i = 0;
+	while (isdigit(string[i])) {
+		offset++;
+		i++;
+	}
+	char* buffer = (char*)malloc(sizeof(char)*(length-offset+1));
+	buffer = strcpy(buffer, string+offset);
+	free(string);
+	return buffer;
+}
+
 void freeProtocolData(protocol_data* d) {
 	data_element* e = d->data;
 	while (e != NULL) {
@@ -36,9 +50,9 @@ void freeProtocolData(protocol_data* d) {
 	free(d);
 }
 
-void insertData(protocol_data* d, char* string) {
+void insertData(protocol_data* d, content_data* content) {
 	data_element* es = (data_element*)malloc(sizeof(data_element));
-	es->resource = string;
+	es->resource = content;
 	es->next = NULL;
 
 	data_element* e = d->data;
@@ -146,9 +160,26 @@ protocol_message encodeProtocolData(protocol_data* d) {
 	// Data composition
 	data_element* e = d->data;
 	while (e != NULL) {
-		long int string_length = strlen(e->resource);
-		buffer_message = (char*)realloc(buffer_message, sizeof(char)*(length_nbchar+TYPE_LENGTH+string_length));
-		buffer_message = strcat(buffer_message, e->resource);
+		if (e->resource->is_string == 1) {
+			long int string_length = strlen(e->resource->data_union->string);
+			buffer_message = (char*)realloc(buffer_message, sizeof(char)*(length_nbchar+TYPE_LENGTH+string_length));
+			buffer_message = strcat(buffer_message, e->resource->data_union->string);
+		}
+		else {
+			long int string_length;
+			if (e->resource->data_union->integer <= 9999)
+				string_length = 4;
+			else if (e->resource->data_union->integer <= 99999999)
+				string_length = 8;
+			else {
+				perror("encodeProtocolData : depassement de limite d'entier.");
+				exit(0);
+			}
+			char* numberEncoding = encodeNumber(e->resource->data_union->integer, string_length);
+			buffer_message = (char*)realloc(buffer_message, sizeof(char)*(length_nbchar+TYPE_LENGTH+string_length));
+			buffer_message = strcat(buffer_message, numberEncoding);
+			free(numberEncoding);
+		}
 		e = e->next;
 	}
 
@@ -158,6 +189,8 @@ protocol_message encodeProtocolData(protocol_data* d) {
 }
 
 void addMessageString(protocol_data* d, char* string) {
+	content_data* cd = (content_data*)malloc(sizeof(content_data));
+	content_union* cu = (content_union*)malloc(sizeof(content_union));
 	// String encoding
 	long int string_length = strlen(string);
 	char* stringEncoding = encodeString(string, string_length);
@@ -168,28 +201,18 @@ void addMessageString(protocol_data* d, char* string) {
 	char* buffer = (char*)calloc(sizeof(char), stringEncodingLength);
 	buffer = strcat(buffer, stringEncoding);
 
-	// Insertion
-	insertData(d, buffer);
+	cu->string = buffer;
+	cd->is_string = 1;
+	cd->data_union = cu;
+	insertData(d, cd);
 }
 
 void addMessageNumber(protocol_data* d, long int number) {
-	// Number encoding
-	int lengthEncoding = 0;
-	if (number <= 9999)
-		lengthEncoding = 4;
-	else if (number <= 99999999)
-		lengthEncoding = 8;
-	else {
-		perror("addMessageNumber : length to large to encode");
-		exit(0);
-	}
-	d->total_length += lengthEncoding;
-	char* numberEncoding = encodeNumber(number, lengthEncoding);
-	char* buffer = (char*)calloc(sizeof(char), lengthEncoding);
-	buffer = strcat(buffer, numberEncoding);
-
-	// Insertion
-	insertData(d, buffer);
+	content_data* cd = (content_data*)malloc(sizeof(content_data));
+	content_union* cu = (content_union*)malloc(sizeof(content_union));
+	cd->data_union = cu;
+	cu->integer = number;
+	insertData(d, cd);
 }
 
 /* ---------------------------------------------
@@ -202,7 +225,7 @@ int char2int(char c) {
 
 // (1) On suppose qu'on ne peut pas avoir de chiffres dans le type
 // (2) On suppose que le type ne contient que des lettres majuscules
-long int decodeLength(protocol_message message) {
+long int decodeNumber(char* message) {
 	long int result = 0;
 	int size_of_length = 0;
 	int i = 0;
@@ -216,6 +239,10 @@ long int decodeLength(protocol_message message) {
 		left_factor /= 10;
 	}
 	return result;
+}
+
+long int decodeLength(protocol_message message) {
+	return decodeNumber(message);
 }
 
 message_type decodeType(protocol_message message) {

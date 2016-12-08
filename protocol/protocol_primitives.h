@@ -22,6 +22,11 @@ typedef enum message_type {
 	FILE_t
 } message_type;
 
+typedef enum content_type {
+	STRING_MESSAGE,
+	INTEGER_MESSAGE
+} content_type;
+
 typedef union content_union {
 	long int integer;
 	char* string;
@@ -33,7 +38,7 @@ typedef struct content_data {
 } content_data;
 
 typedef struct data_element {
-	char* resource;
+	content_data* resource;
 	struct data_element* next;
 } data_element;
 
@@ -49,7 +54,7 @@ typedef struct protocol_data {
 
 void freeProtocolData(protocol_data* d);
 
-void insertData(protocol_data* d, char* string);
+void insertData(protocol_data* d, content_data* content);
 
 /* ---------------------------------------------
 			 FONCTIONS D'ENCODAGE
@@ -74,6 +79,8 @@ void addMessageNumber(protocol_data* d, long int number);
    --------------------------------------------- */
 
 int char2int(char c);
+
+long int decodeNumber(char* number);
 
 long int decodeLength(protocol_message message);
 
