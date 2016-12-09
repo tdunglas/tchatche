@@ -96,6 +96,8 @@ const char* getTypeStructure(message_type type);
 
 protocol_data* extractMessageContent(protocol_data* data, const char* codeStructure);
 
+int headerLength(protocol_message message);
+
 protocol_data* decodeProtocolData(protocol_message message);
 
 #endif

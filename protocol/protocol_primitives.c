@@ -11,7 +11,7 @@ Format du protocole :
 
 Le header correspond a la taille + le type
 
-Si on oublie de mettre a jour les fonctions lors de la creation 
+Si on oublie de mettre a jour les fonctions lors de la creation
 d'un nouveau type, on est prevenu par une erreur lors de l'execution.
 */
 
@@ -44,7 +44,7 @@ char* stringWithoutLength(char* string) {
 
 void freeProtocolContent(content_data* d) {
 	if (d != NULL) {
-		if (d->is_string == 1) {
+		if (d->is_string == 1 && d->data_union->string != NULL) {
 			free(d->data_union->string);
 		}
 		free(d->data_union);
@@ -54,7 +54,7 @@ void freeProtocolContent(content_data* d) {
 void freeProtocolData(protocol_data* d) {
 	data_element* e = d->data;
 	while (e != NULL) {
-		freeProtocolContent(e->resource);
+	        freeProtocolContent(e->resource);
 		data_element* tmp = e;
 		e = e->next;
 		free(tmp);
@@ -196,7 +196,7 @@ protocol_message encodeProtocolData(protocol_data* d) {
 	}
 
 	freeProtocolData(d);
-	
+
 	return buffer_message;
 }
 
@@ -220,10 +220,19 @@ void addMessageString(protocol_data* d, char* string) {
 }
 
 void addMessageNumber(protocol_data* d, long int number) {
-	content_data* cd = (content_data*)malloc(sizeof(content_data));
+        if (number <= 9999)
+            d->total_length = 4;
+        else if (number <= 99999999)
+            d->total_length = 8;
+        else {
+            perror("addMessageNumber : depassement de limite d'entier.");
+	    exit(0);
+        }
+        content_data* cd = (content_data*)malloc(sizeof(content_data));
 	content_union* cu = (content_union*)malloc(sizeof(content_union));
-	cd->data_union = cu;
 	cu->integer = number;
+	cd->is_string = 0;
+	cd->data_union = cu;
 	insertData(d, cd);
 }
 
@@ -285,13 +294,20 @@ message_type decodeType(protocol_message message) {
 	else if (strcmp("SHUT", buffer) == 0) { return SHUT_t; }
 	else if (strcmp("DEBG", buffer) == 0) { return DEBG_t; }
 	else if (strcmp("FILE", buffer) == 0) { return FILE_t; }
-	else { perror("decodeType : unknown or unimplemented type"); exit(0); } 
+	else { perror("decodeType : unknown or unimplemented type"); exit(0); }
 	free(buffer);
 }
 
 protocol_data* extractMessageContent(protocol_data* data, const char* codeStructure) {
 	/* TODO */
 	return NULL;
+}
+
+int headerLength(protocol_message message) {
+        int l = 0;
+	while (isdigit(message[l]))
+	  l++;
+	return l+4;
 }
 
 protocol_data* decodeProtocolData(protocol_message message) {

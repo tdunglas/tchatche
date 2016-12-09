@@ -7,7 +7,7 @@
 #include "protocol_instance.h"
 
 int main() {
-	int i;
+        int i;
 	protocol_message connexion = encodeConnexion("engboris", "s1");
 	for (i = 0; i < decodeLength(connexion); i++) {
 		printf("[%c]", connexion[i]);
