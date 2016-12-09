@@ -102,7 +102,7 @@ const char* encodeType(message_type type) {
 }
 
 char* encodeNumber(long int n, int length) {
-	char* buffer = (char*)malloc(sizeof(char)*length);
+	char* buffer = (char*)malloc(sizeof(char)*length+1);
 	int i;
 	int mod_factor = 10, div_factor = 1;
 	for (i = length-1; i >= 0; i--) {
@@ -167,7 +167,6 @@ protocol_message encodeProtocolData(protocol_data* d) {
 	}
 	buffer_message = strcat(buffer_message, encodeType(d->type));
 	buffer_message[length_nbchar+TYPE_LENGTH] = '\0';
-	free(numberEncoding);
 
 	// Data composition
 	data_element* e = d->data;
@@ -221,14 +220,14 @@ void addMessageString(protocol_data* d, char* string) {
 
 void addMessageNumber(protocol_data* d, long int number) {
         if (number <= 9999)
-            d->total_length = 4;
+            d->total_length += 4;
         else if (number <= 99999999)
-            d->total_length = 8;
+            d->total_length += 8;
         else {
             perror("addMessageNumber : depassement de limite d'entier.");
 	    exit(0);
         }
-        content_data* cd = (content_data*)malloc(sizeof(content_data));
+	content_data* cd = (content_data*)malloc(sizeof(content_data));
 	content_union* cu = (content_union*)malloc(sizeof(content_union));
 	cu->integer = number;
 	cd->is_string = 0;

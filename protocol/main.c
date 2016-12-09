@@ -21,13 +21,13 @@ int main() {
 	protocol_message fail = encodeFail();
 	for (i = 0; i < decodeLength(fail); i++) {
 		printf("[%c]", fail[i]);
-	}
+		}
 	printf("\n");
 	protocol_message deconnexion = encodeDeconnexion(15);
 	for (i = 0; i < decodeLength(deconnexion); i++) {
 		printf("[%c]", deconnexion[i]);
 	}
 	printf("\n");
-	printf("Type : %s", encodeType(decodeType(deconnexion)));
+	printf("Type : %s\n", encodeType(decodeType(deconnexion)));
 	return 0;
 }

@@ -1,11 +1,11 @@
 CC=gcc
 CFLAGS=-Wall
 LDFLAGS=-lm
-EXEC=protocol
+EXEC=protocol.exe
 
 all: $(EXEC)
 
-protocol: protocol_primitives.o protocol_instance.o main.o
+protocol.exe: protocol_primitives.o protocol_instance.o main.o
 		$(CC) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
