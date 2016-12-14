@@ -3,8 +3,9 @@
 
 void run();
 void connexion();
-void recevoir_message();
+int connexion_approval(char* pseudo);
 void deconnexion();
-void envoyer_message();
-void afficher_message(char* msg);
-void coloriage(char* msg);
+void read_message();
+void send_message();
+void print_message(char* msg);
+char* parsing(char* msg);

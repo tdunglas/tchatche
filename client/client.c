@@ -9,30 +9,32 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-int pipes[2][2]; // 1 - client read / write | 2 - serveur read / write
+char* network_path "../network/network.pipe";
+char* my_pipe = "";
 int id;
+int* pipes = (int*) malloc (sizeof(int)*2);
 
 void run()
 {
-	while(connexion());
+  connexion();
 }
 
 
-char* get_message(size_t size)
+void connexion()
 {
-	char* string = (char*) malloc (size);
 
-	if(fgets(string, size, stdin) == NULL)
-	{
-		printf("pas de saisie clavier");
-		return NULL;
+	mode_t t = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+
+	int mkfifo1 = 0;
+	if(access (network_path, F_OK) == -1){
+	  printf("le serveur n'existe pas");
+	  exit(-1);
 	}
-	string[strlen(string) - 1] = '0';
-	return string;
-}
 
-int connexion()
-{
+	pipes[0] = open(network_path, O_WRONLY);
+	pipes[1] = open(my_pipe, O_RDONLY);
+
+
 	pipe(pipes[1]);
 	size_t size = 16;
 	char* buff
@@ -42,21 +44,22 @@ int connexion()
 		if((buff = get_message(size)) == NULL) // pas d'input de l'utilisateur
 			continue;
 
-	}while(verification_validation(buff) == -1)
+	}while(connexion_approval(buff) == -1)
+
 }
 
-int verification_validation(char* pseudo)
+//FIXME : envoyer le msg encodé + récup id + chemin de tube perso et l'ouvrir en lecture.
+int connexion_approval(char* pseudo)
 {
-	//FIXME : envoyer le message encodé
-	write(pipes[2][2], pseudo, strlen(pesudo)*sizeof(char)); 
-
+        write(pipes[0], pseudo, strlen(pseudo) * sizeof(char));
 	char buff[4];
 
-	read(pipes[1][1], buff, sizeof(buff));
+	read(pipes[0], ?, ?);
 
-	if(strcmp(buff, "OKOK") == 0){
-		//TODO :  récupération de l'ID
-		return 1
+	if(strcmp(buff, "OKOK") == 0)
+	{
+	  id = ?
+	  return 1
 	}
 
 	return -1;
@@ -65,25 +68,40 @@ int verification_validation(char* pseudo)
 void deconnexion()
 {
 	char* msg = encode_deconnexion(id);
-	write(pipes[2][2], msg, strlen(msg) + sizeof(char));
+	write(pipes[0], msg, strlen(msg) + sizeof(char));
 
-	int i, j;
-	for(i = 0 ; i < 2 ; i++)
-		for(j = 0 ; j < 2 ; j++)
-			close(pipes[i][j])
+	close(pipes[0]);
+	close(pipes[1]);
+	free(pipes);
 }
 
-void recevoir_message();
-void envoyer_message()
+void read_message()
 {
+  int msg_length;
+  char* tmp = (char*) malloc (1);
+  char* msg;
 
+  char c;
+
+  while(c >= 48 && c <= 57) //number for ascii
+  {
+    read(pipes[1], &c, strlen(char));
+  }
 }
-void afficher_message(char* msg)
-{
 
+void send_message(const char* msg)
+{
+  char* code = encode(msg);
+  write(pipes[0], code, strlen(code));
 }
 
-void coloriage(char* msg)
+void print_message(const char* msg)
 {
-	
+  printf("%s", parsing(msg));
+}
+
+// Coloriage du texte, gestion des pseudo pour les messages privé, etc.
+char* parsing(char* msg)
+{
+  return NULL;
 }
